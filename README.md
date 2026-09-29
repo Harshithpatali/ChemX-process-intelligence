@@ -1,226 +1,215 @@
-# ChemX — Physics-Informed Chemometric Process Intelligence Platform
+# ChemX — Physics-Informed Chemometric Process Intelligence
 
-**Subtitle:** Spectroscopy → Chemometrics → Process Monitoring → Bayesian Soft Sensors → Physics-Informed ML → Uncertainty-Aware Optimization
+**Spectroscopy → Chemometrics → Uncertainty → Process Monitoring → Physics-Informed Decision Support**
 
-Research-oriented portfolio platform demonstrating computational chemometrics, multivariate statistics, Bayesian uncertainty quantification, process monitoring, and physics-informed optimization capabilities relevant to a **Computational Chemometrician / Digital Chemistry** role.
+ChemX is a research-grade portfolio platform for computational chemometrics and digital chemistry. It combines classical multivariate calibration with uncertainty quantification, multivariate statistical process monitoring, calibration-transfer experiments, and a clearly separated mechanistic simulation layer.
 
-> **Scientific honesty:** All experimental results use **public real datasets** (MLNIRdata, Eigenvector Corn, UCPH Sugar Process). Optimization and physics-informed sections use an explicitly labelled **MECHANISTIC_SIMULATION**. No Shell, refinery, LNG, or proprietary industrial data is used or claimed.
+> **Scientific boundary:** MLNIRdata, the Eigenvector Corn benchmark, and the UCPH Sugar Process dataset are public experimental data. The CSTR/Arrhenius physics and optimization layer is **MECHANISTIC_SIMULATION** only. ChemX does not contain or claim Shell, refinery, LNG, or proprietary plant data.
 
----
+## Architecture
 
-## Problem & Scientific Motivation
+```text
+PUBLIC RESEARCH DATA → offline audit / experiments → versioned artifacts
+                                         ↓
+                              Render FastAPI model service
+                                         ↓ HTTPS JSON
+                              Streamlit control tower
 
-High-dimensional spectroscopic and process measurements must be transformed into reliable chemical-property predictions, latent process understanding, uncertainty estimates, anomaly alerts, and decision support under domain shift and physical constraints. ChemX connects:
-
-**Mathematics → Statistics → Chemometrics → Machine Learning → Physics → Optimization → Software Engineering**
-
-## Why Chemometrics?
-
-Classical latent-variable models (PCA, PLS) remain the industry standard for interpretable multivariate calibration of NIR/fluorescence data. They are complemented—not replaced—by Bayesian soft sensors, calibration transfer, and physics-constrained optimization.
-
-## Datasets (Provenance)
-
-| Dataset | Source | License | Role in ChemX |
-|---------|--------|---------|---------------|
-| **MLNIRdata** | [Zenodo 10.5281/zenodo.16781223](https://doi.org/10.5281/zenodo.16781223) | CC BY | NIR spectra (208 × 2635) + density — core calibration, UQ, VIP |
-| **Corn multi-instrument** | [Eigenvector](https://eigenvector.com/resources/data-sets/nir-of-corn-samples-for-standardization-benchmarking/) | Public research | 80 samples × 3 instruments — calibration transfer |
-| **Sugar process** | [UCPH Chemometrics](https://ucphchemometrics.com/sugar-process-data/) (Bro 1999) | Public research | Fluorescence EEM + process vars — monitoring, regimes, root-cause |
-| **Mechanistic CSTR** | Simulated in-repo | N/A | Physics-informed ML & constrained optimization only |
-
-Full variable dictionary, units, checksums, and quality audit: [`data/data_dictionary.md`](data/data_dictionary.md).
-
-## Methodology
-
-- **Spectral preprocessing:** raw, SNV, MSC, Savitzky–Golay (1st/2nd derivative); selected by test RMSE.
-- **PCA:** scores, loadings, explained variance, Hotelling’s T², Q residuals, contribution plots.
-- **PLS / PCR / Ridge / Elastic Net:** nested comparison; VIP for wavelength importance.
-- **Bayesian soft sensor:** Bayesian Ridge (+ optional PCA reduction) → mean + 95% credible interval; coverage reported.
-- **Calibration transfer:** no-transfer vs SNV/MSC vs Direct Standardization across corn instruments.
-- **Process monitoring:** PCA-MSPC on sugar fluorescence; GMM regime hints; statistical root-cause contributions.
-- **Physics-informed demonstration:** first-order Arrhenius–CSTR; black-box NN vs physics residual.
-- **Optimization:** deterministic SLSQP vs risk-aware (MC constraint on P(quality ≥ threshold)).
-
-## Key Results (from `scripts/run_experiments.py`)
-
-| Component | Baseline | Proposed | Metric (observed) |
-|-----------|----------|----------|-------------------|
-| Density prediction | PCR | PLS / Ridge | RMSE ≈ 0.035 (R² ≈ 0.98) |
-| Uncertainty | Point estimate | Bayesian interval | Coverage ≈ 0.90 (95% nominal) |
-| Instrument transfer (Moisture m5→mp5) | Raw model RMSE ≈ 1.82 | Direct Standardization | RMSE ≈ 0.25 |
-| Process monitoring | — | PCA T²/Q | Anomaly flags on hold-out |
-| Physics consistency | Black-box NN | Physics residual | Mean \|r\| ≈ 0.08 |
-| Optimization | Deterministic yield | Risk-aware | Constraint probability reported |
-
-Full JSON: [`reports/results.json`](reports/results.json).
-
-## Repository Structure
-
-```
-ChemX/
-├── data/           # raw (real), processed, mechanistic, dictionary, checksums
-├── src/
-│   ├── data_validation/
-│   ├── preprocessing/
-│   ├── chemometrics/   # PCA, PLS
-│   ├── bayesian/
-│   ├── monitoring/
-│   ├── transfer/
-│   ├── physics_informed/
-│   ├── optimization/
-│   ├── api/            # FastAPI
-│   └── dashboard/      # Streamlit
-├── scripts/run_experiments.py
-├── tests/
-├── reports/
-├── Dockerfile
-└── .github/workflows/ci.yml
+MECHANISTIC_SIMULATION → CSTR / Arrhenius → physics residuals → optimization
 ```
 
-## Quick Start
+The deployed runtime **does not require data/raw/**. The backend loads a versioned MLNIR model bundle from models/; the Streamlit frontend communicates with the backend over HTTPS.
+
+## Scientific workflow
+
+1. Data provenance and validation
+2. Spectral preprocessing: raw, SNV, MSC, Savitzky–Golay
+3. PCA and multivariate diagnostics
+4. PLS / PCR / Ridge / Elastic Net comparison
+5. VIP wavelength ranking
+6. BayesianRidge soft sensor with empirical interval coverage
+7. Hotelling T² / Q residual monitoring
+8. Statistical contribution analysis
+9. Corn instrument-transfer benchmark
+10. Sugar temporal/process monitoring
+11. CSTR physics residual demonstration
+12. Deterministic and risk-aware optimization
+13. FastAPI model serving
+14. Streamlit stakeholder dashboard
+15. Docker + CI + deployment configuration
+
+## Public data provenance
+
+| Dataset | Role | Runtime |
+|---|---|---|
+| MLNIRdata — https://doi.org/10.5281/zenodo.16783068 | Hydrocarbon NIR density calibration and UQ | Model artifact only |
+| Eigenvector Corn — https://eigenvector.com/resources/data-sets/nir-of-corn-samples-for-standardization-benchmarking/ | Multi-instrument calibration transfer | Offline experiments |
+| UCPH Sugar Process — https://ucphchemometrics.com/sugar-process-data/ | Fluorescence/process monitoring | Offline experiments |
+| CSTR / Arrhenius | Physics-informed optimization | MECHANISTIC_SIMULATION |
+
+The verified MLNIRdata Zenodo record is DOI 10.5281/zenodo.16783068; the record describes the underlying dataset DOI as 10.5281/zenodo.16781222. citeturn1search0
+
+Raw datasets are intentionally excluded from Git. See data/README.md and data/data_dictionary.md.
+
+## Current experiment snapshot
+
+The checked-in reports/results.json is an experiment snapshot, not a claim of industrial performance.
+
+- MLNIR: 156/52 train/test split; PLS test RMSE ≈ 0.0349 and R² ≈ 0.9787.
+- Bayesian soft sensor: empirical 95% interval coverage ≈ 90.4% on the held-out split.
+- Corn moisture transfer, m5 → mp5: raw cross-instrument RMSE ≈ 1.816; direct standardization RMSE ≈ 0.252.
+- Sugar monitoring: the current simple NOC/reference construction flags a very high fraction of the hold-out samples. This is treated as evidence of distribution shift / an inadequate reference definition, **not** as a plant alarm-rate claim.
+- The current risk-aware CSTR optimization run can be infeasible for the requested probability/quality constraint. ChemX deliberately reports solver failure rather than presenting an invalid optimum.
+
+These numbers are public-dataset benchmark observations and can change when preprocessing, split strategy, or reference-window methodology changes.
+
+## API
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | /health | Liveness |
+| GET | /ready | Model readiness |
+| GET | /model-info | Model/provenance metadata |
+| GET | /metrics | Validation snapshot |
+| GET | /demo-spectrum | Compact derived spectrum for UI demo |
+| POST | /predict | Density + uncertainty |
+| POST | /monitor | T² / Q / anomaly |
+| POST | /anomaly | Statistical contributions |
+| POST | /optimize | MECHANISTIC_SIMULATION optimization |
+| POST | /explain | Groq narrative or deterministic fallback |
+| POST | /admin/retrain | Local-only retraining; blocked in production |
+
+Interactive OpenAPI documentation is available at /docs.
+
+## Local development
+
+### Backend
 
 ```bash
-# Install (recommended: fresh venv)
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# Linux/Mac: source .venv/bin/activate
-pip install -U pip
-pip install -r requirements.txt
-
-# If Streamlit fails with ImportError on starlette.middleware.gzip:
-pip install -U "streamlit>=1.40" "starlette>=0.46"
-
-# Run unit tests
-set PYTHONPATH=.
-pytest tests/ -v
-
-# Run full experiment suite (writes reports/results.json)
-python scripts/run_experiments.py
-
-# API
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
+pip install -r requirements-api.txt
 uvicorn src.api.main:app --reload --port 8000
-# GET /health  POST /predict  POST /monitor  POST /optimize  GET /metrics
-
-# Dashboard
-streamlit run src/dashboard/app.py
-
-# Docker
-docker build -t chemx .
-docker run -p 8000:8000 chemx
 ```
 
-### Troubleshooting: Streamlit `DEFAULT_EXCLUDED_CONTENT_TYPES` ImportError
+### Frontend
 
-This means your **Streamlit** and **Starlette** versions are mismatched (common on Windows when packages were installed at different times).
+```bash
+pip install -r src/dashboard/requirements.txt
+```
+
+PowerShell:
 
 ```powershell
-# From the ChemX folder, with your venv active:
-pip uninstall -y streamlit starlette
-pip install "streamlit>=1.40,<1.65" "starlette>=0.46"
+$env:CHEMX_API_URL='http://localhost:8000'
 streamlit run src/dashboard/app.py
 ```
 
-Alternatively use Docker (isolates dependencies completely):
+The frontend can run without the raw datasets.
 
-```powershell
-docker build -t chemx .
-docker run -p 8501:8501 chemx streamlit run src/dashboard/app.py --server.address 0.0.0.0 --server.port 8501
+### Offline science / retraining
+
+Install the full development environment from requirements.txt, download the public datasets into data/raw/, validate them, then run:
+
+```bash
+PYTHONPATH=. pytest tests/ -v
+python scripts/run_experiments.py
 ```
 
-## API Endpoints
+Runtime retraining is intentionally disabled in production.
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/health` | Liveness |
-| GET | `/model-info` | Soft-sensor metadata |
-| GET | `/metrics` | Cached validation metrics |
-| POST | `/predict` | Density + credible interval from spectrum |
-| POST | `/monitor` | T² / Q / anomaly flag |
-| POST | `/anomaly` | Contribution-based root-cause summary |
-| POST | `/optimize` | Deterministic or risk-aware CSTR optimum (synthetic) |
+## Render backend
+
+The repository includes render.yaml and a production Dockerfile.
+
+- Runtime: Docker
+- Health check: /health
+- Port: Render-provided $PORT
+- Environment: CHEMX_ENV=production
+- Runtime training: disabled
+- Secrets: GROQ_API_KEY and CHEMX_CORS_ORIGINS are supplied through Render
+
+Render supports Docker-based services and HTTP health checks; the Blueprint keeps this configuration version-controlled. citeturn0search4turn2search1turn2search0
+
+After deployment, record:
+
+```text
+https://<your-service>.onrender.com
+```
+
+Then set CHEMX_CORS_ORIGINS to the exact Streamlit frontend origin.
+
+## Streamlit frontend
+
+Deploy src/dashboard/app.py.
+
+The dependency file beside the entrypoint is src/dashboard/requirements.txt.
+
+Set the Streamlit secret:
+
+```toml
+CHEMX_API_URL = 'https://<your-render-service>.onrender.com'
+```
+
+Streamlit supports repository-local dependency files and secrets outside source control. citeturn3search0turn0search3
+
+## Environment variables
+
+Production-important variables:
+
+```text
+CHEMX_ENV=production
+CHEMX_CORS_ORIGINS=https://<your-streamlit-app>.streamlit.app
+CHEMX_ALLOW_RUNTIME_TRAINING=false
+GROQ_API_KEY=<optional>
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+Never commit .env, Streamlit secrets, or provider credentials.
+
+## Model governance
+
+docs/model_card.md documents model purpose, provenance, validation methodology, uncertainty interpretation, and limitations.
+
+The application intentionally uses language such as **largest statistical contributors** rather than causal claims.
+
+## Engineering controls
+
+- Environment-driven configuration
+- Explicit CORS allowlist
+- Request IDs and response timing headers
+- Production retraining guard
+- Model bundle validation at startup
+- Docker health check
+- Render HTTP health check
+- Separate backend/frontend dependency sets
+- Secrets outside Git
+- Raw-data exclusion
+- Fixed random seeds for reproducible offline experiments
+- Public-data provenance and checksums
+- Deterministic explanation fallback when Groq is unavailable
 
 ## Limitations
 
-- Dataset sizes are modest (typical of public chemometrics benchmarks); results illustrate methodology, not plant-scale performance.
-- Bayesian intervals use a normal approximation from BayesianRidge; coverage is measured, not assumed perfect.
-- Sugar process anomaly rate depends on the chosen reference window; high rates indicate distribution shift, which is informative.
-- Risk-aware optimizer is a demonstration; industrial stochastic programming would use richer uncertainty models.
-- No claim of improved industrial efficiency or Shell-specific results.
+ChemX is a research/portfolio platform, not a plant-certified control system.
 
-## Reproducibility
+- Public datasets are small relative to industrial deployments.
+- Calibration-transfer results depend on the experimental split and paired samples.
+- T²/Q thresholds are reference-set dependent.
+- Statistical contributions are not causal explanations.
+- Bayesian intervals require empirical calibration checks.
+- Mechanistic optimization is a simplified CSTR demonstration.
+- No production process, safety, yield, energy, or financial improvement is claimed.
 
-- Fixed random seeds (42) for splits and simulation.
-- SHA256 checksums of raw data files in `data/checksums.sha256`.
-- Deterministic experiment script; CI runs unit tests on push.
+## Honest resume framing
 
-## Future Research Directions
-
-- Sparse PLS / interval PLS for wavelength selection with chemical assignment references.
-- Multi-way PARAFAC on sugar EEM with non-negativity constraints.
-- Conformal prediction for distribution-free intervals.
-- Active learning loop on the mechanistic surrogate.
-- Model cards and continuous monitoring drift detection.
-
-## Resume Bullets (honest)
-
-- Built an end-to-end chemometrics platform (ChemX) on public NIR and process datasets: spectral preprocessing, PCA/PLS, VIP wavelength analysis, and density soft sensing (R² ≈ 0.98).
-- Implemented Bayesian soft sensors with calibrated credible intervals (empirical coverage ≈ 90% at 95% nominal) and multivariate process monitoring (Hotelling’s T², Q residuals, contribution-based root-cause analysis).
-- Quantified multi-instrument domain shift on the Eigenvector corn benchmark and reduced transfer RMSE via direct standardization (e.g. Moisture m5→mp5: 1.82 → 0.25).
-- Developed a physics-informed CSTR demonstration (Arrhenius kinetics) comparing black-box neural predictors with physical residuals, plus deterministic and risk-aware constrained optimization.
-- Deployed FastAPI prediction/monitoring/optimization endpoints and a Streamlit scientific dashboard; Dockerized with automated pytest CI.
-
-
-
-## Industry-ready deployment notes
-
-ChemX is structured for portfolio / pilot deployment patterns used in digital chemistry teams:
-
-| Capability | Implementation |
-|------------|----------------|
-| Config via environment | `.env` / `.env.example`, `src/config.py` |
-| Model persistence | `models/mlnir_bundle.joblib` via `model_registry` |
-| API readiness | `GET /health`, `GET /ready` |
-| Request tracing | `X-Request-ID`, `X-Response-Time-Ms` headers |
-| CORS | `CHEMX_CORS_ORIGINS` |
-| Structured logging | `src/utils/logging_setup.py` |
-| Stakeholder narratives | Groq LLM via `POST /explain` and dashboard |
-| Secrets | Never bake `GROQ_API_KEY` into Docker images |
-| Retrain guard | `/admin/retrain` blocked when `CHEMX_ENV=production` |
-
-**Disclaimer:** This remains a research portfolio platform on **public** datasets. Industry readiness here means engineering practices (config, health, artifacts, explanations), not certification for plant control.
-
-### Groq stakeholder explanations
-
-1. Copy `.env.example` → `.env`
-2. Set `GROQ_API_KEY=gsk_...` (from https://console.groq.com)
-3. Optional: `GROQ_MODEL=llama-3.3-70b-versatile`
-
-**API**
-
-```bash
-# Predict + auto-explain for operations
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"spectrum": [...], "explain": true, "audience": "management"}'
-
-# Standalone explanation of any result JSON
-curl -X POST http://localhost:8000/explain \
-  -H "Content-Type: application/json" \
-  -d '{"context": {"type": "monitoring", "anomaly": true, "T2": 12.5}, "audience": "operations"}'
-```
-
-**Dashboard:** pages Soft Sensor, Root Cause, Optimization, and **Stakeholder Explain** call Groq when the key is present. Without a key, a deterministic technical fallback is shown.
-
-Docker with Groq:
-
-```bash
-docker run -p 8000:8000 -e GROQ_API_KEY=$GROQ_API_KEY chemx
-```
-
+- Built a research-grade chemometric process-intelligence platform using public NIR and process datasets, combining PLS/PCA, Bayesian uncertainty, MSPC and calibration transfer.
+- Quantified cross-instrument NIR domain shift and evaluated direct standardization on the Eigenvector Corn benchmark.
+- Implemented uncertainty-aware density soft sensing with empirical interval-coverage evaluation.
+- Developed a clearly separated Arrhenius/CSTR physics simulation with constrained and Monte-Carlo risk-aware optimization.
+- Deployed the model-serving layer as FastAPI/Docker and built an API-driven Streamlit control tower with CI, health checks, provenance, and secret management.
 
 ## License
 
-Code: MIT. Datasets retain their original licenses (CC BY for MLNIRdata; Eigenvector and UCPH terms for the others).
-
----
-
-*ChemX is a research/engineering portfolio project. It demonstrates transferable computational capability for computational chemometrics and digital chemistry roles—without fabricating industrial experience or proprietary data.*
+Code: MIT. Dataset rights and attribution remain subject to each original source's terms.
