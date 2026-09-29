@@ -1,8 +1,8 @@
 # ChemX Data Dictionary
 
 **Project:** ChemX — Physics-Informed Chemometric Process Intelligence Platform  
-**Phase:** 1 — Data Acquisition and Audit (completed 2026-09-29)  
-**Status:** ALL THREE real experimental datasets acquired, audited, and checksummed. Validation suite + 12 unit tests passing. Mechanistic simulation reserved for later phases and will be clearly labelled.
+**Phase:** Provenance and audit baseline  
+**Status:** Provenance recorded. Raw datasets are local-only and excluded from Git; checksums are retained where available. Mechanistic simulation is clearly separated.
 
 ---
 
@@ -11,7 +11,7 @@
 | Field | Value |
 |-------|-------|
 | **Dataset name** | MLNIRdata |
-| **Source URL** | https://doi.org/10.5281/zenodo.16781223 |
+| **Source URL** | https://doi.org/10.5281/zenodo.16783068 |
 | **Zenodo record** | 16781223 |
 | **Authors** | Laurent Duval, Louna Alsouki, Jérémy Laxalde, Noémie Caillol |
 | **Publication year** | 2025 (curated release); original data from Laxalde thesis |
@@ -135,7 +135,7 @@ Multivariate process monitoring (PCA / T² / Q), anomaly detection, root-cause c
 
 
 
-**Acquisition status:** COMPLETE. Binary `data.mat` acquired via ERDA share redirect, extracted, and fully audited (see Quality Audit below).
+**Acquisition status:** Source and schema verified; local raw binary is not part of the deployment repository.
 
 ---
 
