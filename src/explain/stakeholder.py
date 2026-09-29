@@ -137,8 +137,12 @@ class StakeholderExplainer:
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
+                # GPT-OSS is a reasoning model. Use completion-token budgeting so
+                # reasoning tokens do not consume the entire visible answer budget.
                 temperature=0.3,
-                max_tokens=DETAIL_TOKENS[detail],
+                max_completion_tokens=max(DETAIL_TOKENS[detail] * 4, 1200),
+                reasoning_effort="low",
+                include_reasoning=False,
             )
             text = (completion.choices[0].message.content or "").strip()
             if not text:
