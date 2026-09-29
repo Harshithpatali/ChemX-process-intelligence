@@ -130,10 +130,88 @@ section[data-testid="stSidebar"]{
   background: linear-gradient(180deg,#0a1620 0%,#050b12 100%);
   border-right:1px solid rgba(0,217,192,.10);
 }
-section[data-testid="stSidebar"] h2{ color:var(--teal); letter-spacing:-0.01em; }
-section[data-testid="stSidebar"] .stRadio label{ padding:.25rem 0; font-weight:500; }
 
 .block-container{ max-width:1440px; padding-top:1.1rem; padding-bottom:3rem; }
+
+/* ---------- SIDEBAR TEXT VISIBILITY ---------- */
+section[data-testid="stSidebar"] * {
+    color: #cfe3ea !important;
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] h4 {
+    color: #00D9C0 !important;
+}
+
+section[data-testid="stSidebar"] .stRadio label,
+section[data-testid="stSidebar"] .stRadio label span,
+section[data-testid="stSidebar"] .stRadio label p {
+    color: #e6f1f5 !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+}
+
+section[data-testid="stSidebar"] .stRadio label:hover,
+section[data-testid="stSidebar"] .stRadio label:hover span {
+    color: #00D9C0 !important;
+}
+
+section[data-testid="stSidebar"] .stCaption,
+section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+section[data-testid="stSidebar"] small {
+    color: #8aa3b0 !important;
+}
+
+section[data-testid="stSidebar"] .stMarkdown p,
+section[data-testid="stSidebar"] .stMarkdown span {
+    color: #cfe3ea !important;
+}
+
+section[data-testid="stSidebar"] hr {
+    border-color: rgba(0, 217, 192, 0.15) !important;
+}
+
+section[data-testid="stSidebar"] code {
+    color: #00D9C0 !important;
+    background: rgba(0, 217, 192, 0.08) !important;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    word-break: break-all;
+}
+
+button[data-testid="stSidebarCollapseButton"] svg,
+button[data-testid="baseButton-headerNoPadding"] svg {
+    fill: #00D9C0 !important;
+    color: #00D9C0 !important;
+}
+
+section[data-testid="stSidebar"] .streamlit-expanderHeader,
+section[data-testid="stSidebar"] .streamlit-expanderContent {
+    color: #cfe3ea !important;
+}
+
+/* ---------- DARK JSON VIEWER ---------- */
+[data-testid="stJson"] {
+    background: linear-gradient(160deg, rgba(16,35,47,.92), rgba(8,16,23,.92)) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(0,217,192,.16) !important;
+    padding: .6rem .8rem !important;
+}
+[data-testid="stJson"] * {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.82rem !important;
+    background: transparent !important;
+}
+[data-testid="stJson"] .key { color: #00D9C0 !important; }
+[data-testid="stJson"] .string { color: #fcd34d !important; }
+[data-testid="stJson"] .number { color: #c4b5fd !important; }
+[data-testid="stJson"] .boolean { color: #fca5a5 !important; }
+[data-testid="stJson"] .null { color: #8aa3b0 !important; }
+[data-testid="stJson"] svg { fill: #00D9C0 !important; }
 
 /* ---------- HERO ---------- */
 .hero{
@@ -189,7 +267,7 @@ section[data-testid="stSidebar"] .stRadio label{ padding:.25rem 0; font-weight:5
   text-transform:uppercase; font-weight:700; }
 .metric-value{ color:#fff; font-size:1.6rem; font-weight:800;
   letter-spacing:-0.02em; margin-top:.15rem; }
-.metric-sub{ font-size:.78rem; color:var(--teal); margin-top:.15rem; }
+.metric-sub{ font-size:.78rem; color:var(--teal); margin-top:.15rem; word-break:break-all; }
 
 @keyframes fadeUp { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 
@@ -250,7 +328,7 @@ section[data-testid="stSidebar"] .stRadio label{ padding:.25rem 0; font-weight:5
   box-shadow: 0 16px 40px -14px rgba(0,217,192,.95);
 }
 
-/* ---------- MISC ---------- */
+/* ---------- TABS / UPLOADER ---------- */
 .stTabs [data-baseweb="tab-list"]{ gap:.35rem; }
 .stTabs [data-baseweb="tab"]{
   background: rgba(16,35,47,.7); border-radius:10px;
@@ -353,7 +431,6 @@ def gauge_chart(value: float, title: str, max_val: float = 100.0,
 
 
 def uncertainty_band(pred: float, lower: float, upper: float) -> go.Figure:
-    """Horizontal visualization of an interval with a diamond on the prediction."""
     span = max(upper - lower, 1e-6)
     pad = span * 0.6
     fig = go.Figure()
@@ -392,7 +469,6 @@ def uncertainty_band(pred: float, lower: float, upper: float) -> go.Figure:
 def contribution_chart(indices: List[int], values: List[float]) -> go.Figure:
     if not indices:
         return go.Figure()
-    # largest at top
     pairs = sorted(zip(indices, values), key=lambda p: p[1])
     idxs = [str(p[0]) for p in pairs]
     vals = [p[1] for p in pairs]
@@ -420,7 +496,6 @@ def contribution_chart(indices: List[int], values: List[float]) -> go.Figure:
 
 
 def metrics_radar(metrics: Dict[str, Any]) -> go.Figure:
-    """A compact radar summarizing model health on a 0-100 scale."""
     rmse = float(metrics.get("pls_test_rmse", 0) or 0)
     cov = float(metrics.get("bayesian_coverage_95", 0) or 0) * 100
     n_train = float(metrics.get("n_train", 0) or 0)
@@ -430,7 +505,7 @@ def metrics_radar(metrics: Dict[str, Any]) -> go.Figure:
     cov_score = max(0.0, 100.0 - abs(cov - 95.0) * 4.0)
     train_score = min(100.0, (n_train / 100.0) * 100.0) if n_train else 0.0
     feature_score = min(100.0, (n_features / 1000.0) * 100.0) if n_features else 0.0
-    latency_score = 92.0  # placeholder; swap with real telemetry if available
+    latency_score = 92.0
 
     labels = ["RMSE quality", "Coverage", "Train size", "Spectral richness", "Latency"]
     values = [rmse_score, cov_score, train_score, feature_score, latency_score]
@@ -476,7 +551,6 @@ _HEADING_RE = re.compile(r"^\s*#{2,4}\s*(.+?)\s*$", re.MULTILINE)
 
 
 def parse_explanation(md: str) -> Tuple[str, List[Tuple[str, str]]]:
-    """Return (bottom_line, [(section_title, body_md), ...])."""
     if not md:
         return "", []
     bottom = ""
@@ -501,7 +575,6 @@ def parse_explanation(md: str) -> Tuple[str, List[Tuple[str, str]]]:
 
 
 def _render_markdown_body(body: str) -> str:
-    """Convert simple markdown bullets/paragraphs to safe HTML."""
     lines = [ln.rstrip() for ln in body.splitlines()]
     out: List[str] = []
     in_list = False
@@ -531,9 +604,7 @@ def _render_markdown_body(body: str) -> str:
 
 
 def render_explanation(result: Dict[str, Any], fallback_key: str = "stakeholder_explanation"):
-    """Render the AI explanation as clean, scannable cards."""
     raw = result.get("explanation") or result.get("message") or ""
-    # Some endpoints nest the payload
     nested = result.get(fallback_key)
     if not raw and isinstance(nested, dict):
         raw = nested.get("explanation", nested.get("message", ""))
@@ -554,7 +625,6 @@ def render_explanation(result: Dict[str, Any], fallback_key: str = "stakeholder_
         )
 
     if not sections:
-        # fall back to raw rendering with nicer spacing
         st.markdown(
             f'<div class="explain-card" style="--accent:#00D9C0">'
             f'{_render_markdown_body(raw)}</div>',
@@ -600,7 +670,7 @@ with st.sidebar:
         ],
         label_visibility="collapsed",
     )
-    page = page.split("  ", 1)[-1]  # strip leading emoji+space
+    page = page.split("  ", 1)[-1]
 
     st.divider()
     st.caption(f"Backend: `{API_BASE_URL}`")
@@ -685,14 +755,30 @@ if page == "Overview":
     )
 
     st.markdown("### Model provenance")
-    st.json(
-        {
-            "source": info.get("data_source"),
-            "target": info.get("target"),
-            "model": info.get("model_type"),
-            "runtime_data_required": info.get("runtime_data_required"),
-            "disclaimer": info.get("disclaimer"),
-        }
+    provenance = {
+        "Source": info.get("data_source", "—"),
+        "Target": info.get("target", "—"),
+        "Model": info.get("model_type", "—"),
+        "Runtime data required": info.get("runtime_data_required", "—"),
+        "Disclaimer": info.get("disclaimer", "—"),
+    }
+    rows_html = "".join(
+        f'<li style="display:flex;gap:.6rem;margin-bottom:.45rem;">'
+        f'<span style="color:#8aa3b0;min-width:180px;font-weight:600;">{k}</span>'
+        f'<span style="color:#e6f1f5;word-break:break-word;">{v}</span>'
+        f'</li>'
+        for k, v in provenance.items()
+    )
+    st.markdown(
+        f"""
+        <div class="explain-card" style="--accent:#8B5CF6">
+            <h4>📋 Provenance metadata</h4>
+            <ul style="list-style:none;padding-left:0;">
+                {rows_html}
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 
