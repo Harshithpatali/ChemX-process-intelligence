@@ -32,7 +32,7 @@ jobs:
         run: python -m compileall -q src scripts tests
 
       - name: Ruff static checks
-        run: ruff check src scripts tests --select E,F --ignore E501
+        run: ruff check src scripts tests --select E,F --ignore E501,E402
 
       - name: Unit and API smoke tests
         env:

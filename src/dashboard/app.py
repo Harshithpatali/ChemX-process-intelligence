@@ -239,8 +239,10 @@ elif page == "Soft Sensor":
             u = result["uncertainty"]
             a, b, c = st.columns(3)
             with a: kpi("Prediction", f"{result['prediction']:.4f}")
-            with b: kpi("95% lower", f"{u['lower']:.4f}")
-            with c: kpi("95% upper", f"{u['upper']:.4f}")
+            with b:
+                kpi("95% lower", f"{u['lower']:.4f}")
+            with c:
+                kpi("95% upper", f"{u['upper']:.4f}")
             st.caption("Interval calibration is empirical on the held-out public dataset; nominal 95% does not imply guaranteed coverage.")
             explanation(result)
 
@@ -253,8 +255,10 @@ elif page == "Process Monitoring":
         if not error_box(result):
             a, b, c = st.columns(3)
             with a: kpi("Hotelling T²", f"{result['T2']:.3f}")
-            with b: kpi("Q residual", f"{result['Q']:.3f}")
-            with c: kpi("Status", result["status"].upper())
+            with b:
+                kpi("Q residual", f"{result['Q']:.3f}")
+            with c:
+                kpi("Status", result["status"].upper())
             st.json(result)
             explanation(result)
 

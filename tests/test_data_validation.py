@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-# Ensure src is importable
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
 
-from data_validation.validators import (
+from src.data_validation.validators import (
     check_missing,
     check_duplicates,
     check_constant_features,
