@@ -4,6 +4,7 @@
   "n_train": 156,
   "n_test": 52,
   "n_features": 2635,
-  "source": "MLNIRdata (Zenodo 10.5281/zenodo.16781223)",
-  "target": "normalized_density"
+  "source": "MLNIRdata (Zenodo 10.5281/zenodo.16783068; dataset DOI 10.5281/zenodo.16781222)",
+  "target": "normalized_density",
+  "model_version": "mlnir-density-v1"
 }
