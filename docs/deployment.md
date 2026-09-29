@@ -30,7 +30,7 @@ The repository includes `render.yaml` and a backend Dockerfile.
 
 1. Create/sync the Render Blueprint from the repository.
 2. Set `CHEMX_CORS_ORIGINS` to the exact deployed Streamlit origin.
-3. Set `GROQ_API_KEY` only if stakeholder LLM narratives are desired.
+3. Set `GROQ_API_KEY` only if stakeholder LLM narratives are desired. Set `GROQ_MODEL=openai/gpt-oss-120b` for the OpenAI GPT-OSS 120B model hosted by Groq.
 4. Render health check: `GET /health`.
 5. Readiness: `GET /ready`.
 6. OpenAPI: `GET /docs`.
