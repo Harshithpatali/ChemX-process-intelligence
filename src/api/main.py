@@ -1,59 +1,55 @@
-"""ChemX FastAPI — industry-oriented service layer.
+"""ChemX production API.
 
-Endpoints:
-  GET  /health
-  GET  /ready
-  GET  /model-info
-  GET  /metrics
-  POST /predict
-  POST /monitor
-  POST /anomaly
-  POST /optimize
-  POST /explain   (Groq stakeholder narrative; requires GROQ_API_KEY)
+The API is the runtime boundary: raw research datasets are not required by the
+deployed service. The versioned model bundle under models/ is loaded at startup.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from pydantic import BaseModel, Field
+
 from src.config import get_settings
-from src.utils.logging_setup import setup_logging
-from src.utils.model_registry import load_bundle, train_and_save
-from src.optimization.process_opt import optimize_deterministic, optimize_risk_aware
 from src.explain.stakeholder import StakeholderExplainer
+from src.optimization.process_opt import optimize_deterministic, optimize_risk_aware
+from src.utils.logging_setup import setup_logging
+from src.utils.model_registry import load_bundle
 
 settings = get_settings()
 logger = setup_logging(settings.log_level)
 
+APP_VERSION = "1.0.0"
+
 app = FastAPI(
     title="ChemX API",
+    version=APP_VERSION,
     description=(
-        "Physics-Informed Chemometric Process Intelligence Platform. "
-        "Public research datasets only — not industrial plant data."
+        "Research-grade chemometric process intelligence API. "
+        "Public experimental datasets only; mechanistic optimization is synthetic."
     ),
-    version="0.2.0",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins if settings.cors_origins != ["*"] else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Request-ID"],
 )
 
 _bundle: Dict[str, Any] = {}
@@ -61,111 +57,128 @@ _metrics: Dict[str, Any] = {}
 _explainer = StakeholderExplainer()
 
 
+class SpectrumRequest(BaseModel):
+    spectrum: List[float] = Field(..., min_length=1, description="NIR spectrum in model wavelength order")
+    explain: bool = False
+    audience: str = Field("operations", pattern="^(operations|quality|management)$")
+
+
+class ProcessRequest(BaseModel):
+    risk_aware: bool = False
+    min_prob: float = Field(0.85, ge=0.0, le=1.0)
+    quality_threshold: float = Field(0.50, ge=0.0, le=1.0)
+    explain: bool = False
+    audience: str = Field("management", pattern="^(operations|quality|management)$")
+
+
+class ExplainRequest(BaseModel):
+    context: Dict[str, Any]
+    audience: str = Field("operations", pattern="^(operations|quality|management)$")
+    detail: str = Field("standard", pattern="^(brief|standard|detailed)$")
+
+
 @app.on_event("startup")
-def _startup() -> None:
+def startup() -> None:
     global _bundle, _metrics
-    logger.info("ChemX starting (env=%s)", settings.env)
     _bundle, _metrics = load_bundle()
     logger.info(
-        "Models ready | n_features=%s | PLS RMSE=%.4f | Groq=%s",
+        "ChemX ready model=%s features=%s groq=%s",
+        _metrics.get("model_version"),
         _metrics.get("n_features"),
-        _metrics.get("pls_test_rmse", -1),
-        "configured" if _explainer.available else "not configured",
+        settings.groq_configured,
     )
 
 
 @app.middleware("http")
-async def add_request_id(request: Request, call_next):
-    rid = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
-    start = time.perf_counter()
-    response = await call_next(request)
-    elapsed_ms = (time.perf_counter() - start) * 1000
-    response.headers["X-Request-ID"] = rid
-    response.headers["X-Response-Time-Ms"] = f"{elapsed_ms:.1f}"
-    logger.info(
-        "%s %s -> %s (%.1f ms)",
-        request.method,
-        request.url.path,
-        response.status_code,
-        elapsed_ms,
-    )
+async def request_context(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception("Unhandled request error id=%s path=%s", request_id, request.url.path)
+        raise
+    elapsed = (time.perf_counter() - started) * 1000
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Response-Time-Ms"] = f"{elapsed:.1f}"
     return response
 
 
-class SpectrumRequest(BaseModel):
-    spectrum: List[float] = Field(..., description="NIR spectrum; length must match model")
-    explain: bool = Field(False, description="If true, attach Groq stakeholder explanation")
-    audience: str = Field("operations", description="operations | quality | management")
+def _validate_spectrum(values: List[float]) -> np.ndarray:
+    expected = int(_metrics.get("n_features") or _bundle.get("n_features", 0))
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 1 or x.size != expected:
+        raise HTTPException(422, f"Expected {expected} spectral values; received {x.size}.")
+    if not np.isfinite(x).all():
+        raise HTTPException(422, "Spectrum contains NaN or infinite values.")
+    return x.reshape(1, -1)
 
 
-class ProcessRequest(BaseModel):
-    T: float = 360.0
-    tau: float = 2.0
-    C_A0: float = 1.0
-    risk_aware: bool = False
-    min_prob: float = 0.85
-    quality_threshold: float = 0.50
-    explain: bool = False
-    audience: str = "management"
-
-
-class ExplainRequest(BaseModel):
-    context: Dict[str, Any] = Field(..., description="Any ChemX result JSON to narrate")
-    audience: str = "operations"
-    detail: str = Field("standard", description="brief | standard | detailed")
-
-
-def _check_spectrum(spectrum: List[float]) -> np.ndarray:
-    n = int(_metrics.get("n_features") or _bundle["n_features"])
-    x = np.asarray(spectrum, dtype=float)
-    if x.ndim != 1 or x.shape[0] != n:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Expected spectrum length {n}, got {x.shape}",
-        )
-    return (x.reshape(1, -1) - _bundle["mu"]).astype(float)
-
-
-def _maybe_explain(payload: Dict[str, Any], explain: bool, audience: str) -> Dict[str, Any]:
-    if not explain:
+def _with_explanation(payload: Dict[str, Any], requested: bool, audience: str) -> Dict[str, Any]:
+    if not requested:
         return payload
-    exp = _explainer.explain(payload, audience=audience)
-    out = dict(payload)
-    out["stakeholder_explanation"] = exp
-    return out
+    result = _explainer.explain(payload, audience=audience)
+    return {**payload, "stakeholder_explanation": result}
+
+
+@app.get("/")
+def root():
+    return {"service": "ChemX API", "version": APP_VERSION, "docs": "/docs", "health": "/health"}
 
 
 @app.get("/health")
 def health():
-    return {
-        "status": "ok",
-        "service": "ChemX",
-        "version": "0.2.0",
-        "env": settings.env,
-    }
+    return {"status": "ok", "service": "chemx-api", "version": APP_VERSION}
 
 
 @app.get("/ready")
 def ready():
-    ready_ok = bool(_bundle) and "pls" in _bundle
+    ok = bool(_bundle) and "pls" in _bundle and "bayes" in _bundle and "monitor" in _bundle
     return {
-        "ready": ready_ok,
-        "models_loaded": ready_ok,
-        "groq_configured": _explainer.available,
+        "ready": ok,
+        "model_loaded": ok,
+        "model_version": _metrics.get("model_version"),
         "n_features": _metrics.get("n_features"),
+        "groq_configured": settings.groq_configured,
     }
 
 
 @app.get("/model-info")
 def model_info():
+    axis = np.asarray(_bundle.get("axis", []), dtype=float)
     return {
-        "soft_sensor": "PLS + BayesianRidge on MLNIRdata density",
+        "model_version": _metrics.get("model_version"),
+        "model_type": "PLS + BayesianRidge + PCA-MSPC",
+        "target": "normalized_density",
         "n_features": _metrics.get("n_features"),
         "n_train": _metrics.get("n_train"),
-        "preprocessing": "mean-centering",
-        "data_source": _metrics.get("source", "MLNIRdata (public)"),
-        "disclaimer": "Public research data only — not industrial plant data.",
-        "groq_explanations": _explainer.available,
+        "wavelength_axis": {
+            "unit": "cm-1",
+            "min": float(axis.min()) if axis.size else None,
+            "max": float(axis.max()) if axis.size else None,
+        },
+        "data_source": _metrics.get("source"),
+        "runtime_data_required": False,
+        "disclaimer": "Public research data only; not industrial plant data.",
+    }
+
+
+@app.get("/demo-spectrum")
+def demo_spectrum():
+    """Return the training-mean spectrum stored in the model bundle.
+
+    This is a compact derived artifact, not the raw training dataset.
+    """
+    axis = np.asarray(_bundle["axis"], dtype=float)
+    mean_spectrum = np.asarray(_bundle["mu"], dtype=float)
+    return {
+        "type": "derived_demo_spectrum",
+        "source": "MLNIRdata training-set mean",
+        "axis_unit": "cm-1",
+        "axis": axis.tolist(),
+        "spectrum": mean_spectrum.tolist(),
+        "n_features": len(mean_spectrum),
+        "note": "Derived model artifact for UI demonstration; not a raw dataset export.",
     }
 
 
@@ -176,47 +189,51 @@ def metrics():
 
 @app.post("/predict")
 def predict(req: SpectrumRequest):
-    x = _check_spectrum(req.spectrum)
-    yhat = float(_bundle["pls"].predict(x)[0])
-    interval = _bundle["bayes"].predict_interval(x)
+    x = _validate_spectrum(req.spectrum)
+    centered = x - _bundle["mu"]
+    pred = float(_bundle["pls"].predict(centered)[0])
+    interval = _bundle["bayes"].predict_interval(centered)
     payload = {
         "type": "prediction",
-        "prediction": yhat,
+        "model_version": _metrics.get("model_version"),
+        "prediction": pred,
         "uncertainty": {
             "lower": float(interval["lower"][0]),
             "upper": float(interval["upper"][0]),
             "std": float(interval["std"][0]),
+            "nominal_level": 0.95,
         },
-        "status": "ok",
         "target": "normalized_density",
-        "units_note": "Normalized density on public MLNIRdata scale [0,1]",
+        "status": "ok",
+        "data_classification": "PUBLIC_RESEARCH_MODEL",
     }
-    return _maybe_explain(payload, req.explain, req.audience)
+    return _with_explanation(payload, req.explain, req.audience)
 
 
 @app.post("/monitor")
 def monitor(req: SpectrumRequest):
-    x = _check_spectrum(req.spectrum)
-    m = _bundle["monitor"].monitor(x)
-    anomaly = bool(m["anomaly"][0])
+    x = _validate_spectrum(req.spectrum)
+    m = _bundle["monitor"].monitor(x - _bundle["mu"])
     payload = {
         "type": "monitoring",
         "T2": float(m["T2"][0]),
         "Q": float(m["Q"][0]),
         "T2_limit": float(m["T2_limit"][0]),
         "Q_limit": float(m["Q_limit"][0]),
-        "anomaly": anomaly,
-        "status": "anomaly" if anomaly else "normal",
+        "anomaly": bool(m["anomaly"][0]),
+        "status": "anomaly" if bool(m["anomaly"][0]) else "normal",
+        "interpretation": "Statistical deviation from the model reference space; not proof of causality.",
     }
-    return _maybe_explain(payload, req.explain, req.audience)
+    return _with_explanation(payload, req.explain, req.audience)
 
 
 @app.post("/anomaly")
 def anomaly(req: SpectrumRequest):
-    x = _check_spectrum(req.spectrum)
-    rc = _bundle["monitor"].root_cause(x, sample_idx=0, top_k=10)
-    rc["type"] = "root_cause"
-    return _maybe_explain(rc, req.explain, req.audience)
+    x = _validate_spectrum(req.spectrum)
+    result = _bundle["monitor"].root_cause(x - _bundle["mu"], sample_idx=0, top_k=10)
+    result["type"] = "root_cause"
+    result["interpretation"] = "Largest statistical contributors to Q residual; not causal attribution."
+    return _with_explanation(result, req.explain, req.audience)
 
 
 @app.post("/optimize")
@@ -229,32 +246,32 @@ def optimize(req: ProcessRequest):
     else:
         result = optimize_deterministic()
     result["type"] = "optimization"
-    result["note"] = "MECHANISTIC_SIMULATION — not industrial data"
-    return _maybe_explain(result, req.explain, req.audience)
+    result["data_classification"] = "MECHANISTIC_SIMULATION"
+    result["note"] = "Synthetic CSTR/Arrhenius demonstration only; not plant operating guidance."
+    return _with_explanation(result, req.explain, req.audience)
 
 
 @app.post("/explain")
 def explain(req: ExplainRequest):
-    result = _explainer.explain(req.context, audience=req.audience, detail=req.detail)
-    if not result.get("ok") and result.get("error") == "groq_not_configured":
-        raise HTTPException(status_code=503, detail=result)
-    return result
+    # The explainer has a deterministic fallback, so this endpoint remains usable
+    # without an LLM key.
+    return _explainer.explain(req.context, audience=req.audience, detail=req.detail)
 
 
 @app.post("/admin/retrain")
 def retrain():
     if settings.is_production:
-        raise HTTPException(403, "Retrain disabled in production")
+        raise HTTPException(403, "Retraining is disabled in production.")
+    if not settings.allow_runtime_training:
+        raise HTTPException(403, "Set CHEMX_ALLOW_RUNTIME_TRAINING=true for local development.")
+    from src.utils.model_registry import train_and_save
     global _bundle, _metrics
-    train_and_save(force=True)
+    _metrics = train_and_save(force=True)
     _bundle, _metrics = load_bundle()
     return {"status": "retrained", "metrics": _metrics}
 
 
 @app.exception_handler(Exception)
 async def unhandled(request: Request, exc: Exception):
-    logger.exception("Unhandled error on %s", request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "type": type(exc).__name__},
-    )
+    logger.exception("Unhandled error path=%s", request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error", "request_id": request.headers.get("X-Request-ID")})
