@@ -128,7 +128,7 @@ The repository includes render.yaml and a production Dockerfile.
 - Port: Render-provided $PORT
 - Environment: CHEMX_ENV=production
 - Runtime training: disabled
-- Secrets: GROQ_API_KEY and CHEMX_CORS_ORIGINS are supplied through Render
+- Secrets: GROQ_API_KEY and CHEMX_CORS_ORIGINS are supplied through Render; the default narrative model is `openai/gpt-oss-120b`.
 
 Render supports Docker-based services and HTTP health checks; the Blueprint keeps this configuration version-controlled. citeturn0search4turn2search1turn2search0
 
@@ -163,7 +163,7 @@ CHEMX_ENV=production
 CHEMX_CORS_ORIGINS=https://<your-streamlit-app>.streamlit.app
 CHEMX_ALLOW_RUNTIME_TRAINING=false
 GROQ_API_KEY=<optional>
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
 Never commit .env, Streamlit secrets, or provider credentials.
