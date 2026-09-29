@@ -157,19 +157,17 @@ if page == "Overview":
     )
     st.markdown("### Runtime architecture")
     st.code(
-        "Streamlit UI
-"
-        "    ↓ HTTPS JSON
-"
-        "Render FastAPI
-"
-        "    ↓
-"
-        "Versioned MLNIR model bundle
-"
-        "    ↓
-"
-        "Prediction / UQ / MSPC / optimization",
+        "\n".join(
+            [
+                "Streamlit UI",
+                "    ↓ HTTPS JSON",
+                "Render FastAPI",
+                "    ↓",
+                "Versioned MLNIR model bundle",
+                "    ↓",
+                "Prediction / UQ / MSPC / optimization",
+            ]
+        ),
         language="text",
     )
     st.markdown("### Model provenance")
