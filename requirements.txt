@@ -1,27 +1,11 @@
-# Core scientific stack
-numpy>=1.24,<3
+# Full local development environment
+-r requirements-api.txt
+-r src/dashboard/requirements.txt
+
+# Offline experiments / testing
 pandas>=2.0,<3
-scipy>=1.10,<2
-scikit-learn>=1.3,<2
 matplotlib>=3.7,<4
 seaborn>=0.12,<1
-joblib>=1.3
-
-# API
-fastapi>=0.110,<1
-uvicorn[standard]>=0.30,<1
-pydantic>=2.0,<3
-python-multipart>=0.0.9
-
-# Dashboard — pin Streamlit + Starlette to avoid GZip ImportError
-streamlit>=1.40,<1.65
-starlette>=0.46.0,<2
-
-# Config & LLM explanations
-python-dotenv>=1.0
-groq>=0.9
-
-# Tests
-pyyaml>=6.0
-pytest>=7.4
-httpx>=0.24
+pytest>=7.4,<9
+pyyaml>=6,<7
+python-multipart>=0.0.9,<1
