@@ -1,4 +1,4 @@
-"""API smoke tests and optimization constraint tests."""
+"""Runtime-independent API, model and optimization smoke tests."""
 
 from __future__ import annotations
 
@@ -6,53 +6,86 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.optimization.process_opt import optimize_deterministic, optimize_risk_aware
-from src.physics_informed.reactor import cstr_steady_state, simulate_campaign
-from src.utils.io import load_mlnir, train_test_split_indices
 from src.chemometrics.pls import PLSModel
+from src.optimization.process_opt import optimize_deterministic
+from src.physics_informed.reactor import cstr_steady_state, simulate_campaign
+from src.utils.model_registry import load_bundle
 
 
 def test_cstr_physical_bounds():
-    r = cstr_steady_state(1.0, 350.0, 2.0)
-    assert 0 <= r["conversion"] <= 1
-    assert r["C_A"] >= 0
-    assert r["yield"] >= 0
+    result = cstr_steady_state(1.0, 350.0, 2.0)
+    assert 0 <= result["conversion"] <= 1
+    assert result["C_A"] >= 0
+    assert result["yield"] >= 0
 
 
 def test_deterministic_opt_feasible():
-    res = optimize_deterministic()
-    assert res["success"] or res["yield"] > 0
-    assert 320 <= res["T"] <= 420
-    assert 0.5 <= res["tau"] <= 6.0
-    assert 0 <= res["yield"] <= 1
+    result = optimize_deterministic()
+    assert result["success"]
+    assert 320 <= result["T"] <= 420
+    assert 0.5 <= result["tau"] <= 6.0
+    assert 0 <= result["yield"] <= 1
 
 
 def test_simulation_label():
     sim = simulate_campaign(50, seed=1)
     assert sim["label"] == "MECHANISTIC_SIMULATION"
-    assert sim["spectra"].shape[0] == 50
+    assert sim["spectra"].shape == (50, 50)
 
 
-def test_pls_predict_shape():
-    data = load_mlnir()
-    X, y = data["X"], data["y"]
-    tr, te = train_test_split_indices(len(y), 0.3, 0)
-    mu = X[tr].mean(0)
-    pls = PLSModel(n_components=5).fit(X[tr] - mu, y[tr])
-    pred = pls.predict(X[te] - mu)
-    assert pred.shape == (len(te),)
+def test_pls_predict_shape_on_synthetic_matrix():
+    rng = np.random.RandomState(0)
+    X = rng.normal(size=(40, 20))
+    y = X[:, 0] * 0.4 - X[:, 1] * 0.2 + rng.normal(0, 0.05, 40)
+    model = PLSModel(n_components=3).fit(X[:30], y[:30])
+    pred = model.predict(X[30:])
+    assert pred.shape == (10,)
 
 
-@pytest.mark.skipif(True, reason="Optional FastAPI TestClient; run manually if httpx available")
-def test_api_health():
+def test_production_model_bundle_loads_without_raw_data():
+    bundle, metrics = load_bundle()
+    assert "pls" in bundle
+    assert "bayes" in bundle
+    assert "monitor" in bundle
+    assert metrics["n_features"] == bundle["n_features"]
+
+
+def test_api_health_and_model_info():
     from fastapi.testclient import TestClient
     from src.api.main import app
-    client = TestClient(app)
-    r = client.get("/health")
-    assert r.status_code == 200
-    assert r.json()["status"] == "ok"
+
+    with TestClient(app) as client:
+        health = client.get("/health")
+        assert health.status_code == 200
+        assert health.json()["status"] == "ok"
+
+        ready = client.get("/ready")
+        assert ready.status_code == 200
+        assert ready.json()["model_loaded"] is True
+
+        info = client.get("/model-info")
+        assert info.status_code == 200
+        assert info.json()["runtime_data_required"] is False
+
+
+def test_api_predict_and_monitor():
+    from fastapi.testclient import TestClient
+    from src.api.main import app
+
+    bundle, _ = load_bundle()
+    spectrum = np.asarray(bundle["mu"], dtype=float).tolist()
+
+    with TestClient(app) as client:
+        prediction = client.post("/predict", json={"spectrum": spectrum})
+        assert prediction.status_code == 200
+        assert "prediction" in prediction.json()
+        assert "uncertainty" in prediction.json()
+
+        monitoring = client.post("/monitor", json={"spectrum": spectrum})
+        assert monitoring.status_code == 200
+        assert "T2" in monitoring.json()
+        assert "Q" in monitoring.json()
