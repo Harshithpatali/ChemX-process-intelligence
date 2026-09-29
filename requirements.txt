@@ -3,7 +3,7 @@
 -r requirements-streamlit.txt
 
 # Experiments, notebooks and testing
-matplotlib>=3.7,<4
+matplotlib>=3.11.2,<4
 seaborn>=0.12,<1
 pytest>=7.4,<9
 ruff>=0.6,<1
