@@ -1,5 +1,6 @@
-# CI-only environment: keep this separate from the Streamlit runtime.
+# CI-only environment: explicit runtime/test dependencies.
 -r requirements-api.txt
 httpx>=0.27,<1
 pytest>=7.4,<9
 ruff>=0.6,<1
+pandas>=2.0,<3
