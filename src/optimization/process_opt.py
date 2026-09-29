@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 from scipy.optimize import minimize
 
-from src.physics_informed.reactor import arrhenius, cstr_steady_state
+from src.physics_informed.reactor import cstr_steady_state
 
 
 def objective_yield_energy(
@@ -54,9 +54,8 @@ def optimize_deterministic(
     )
     T, tau, C_A0 = res.x
     r = cstr_steady_state(C_A0, T, tau)
-    success = bool(res.success) and prob >= min_prob
     return {
-        "success": success,
+        "success": bool(res.success),
         "T": float(T),
         "tau": float(tau),
         "C_A0": float(C_A0),
@@ -137,8 +136,9 @@ def optimize_risk_aware(
     )
     ey, ee, prob = mc_stats(res.x)
     T, tau, C_A0 = res.x
+    success = bool(res.success) and prob >= min_prob
     return {
-        "success": bool(res.success),
+        "success": success,
         "T": float(T),
         "tau": float(tau),
         "C_A0": float(C_A0),

@@ -206,7 +206,10 @@ elif page == "Spectroscopy":
     spectrum = np.asarray(d["spectrum"], dtype=float)
     st.caption("Derived training-set mean spectrum is used for demonstration; raw datasets are not bundled with the frontend.")
     st.line_chart(spectrum)
-    st.write(f"**{len(spectrum):,} spectral variables** · axis: {d['axis_unit']}")
+    st.write(
+        f"**{len(spectrum):,} spectral variables** · "
+        f"axis: {d['axis_unit']} · range: {axis.min():.0f}–{axis.max():.0f}"
+    )
     uploaded = st.file_uploader("Upload a single-column or comma-separated spectrum", type=["csv", "txt"])
     if uploaded:
         raw = uploaded.getvalue().decode("utf-8")

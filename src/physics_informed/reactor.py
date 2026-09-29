@@ -7,7 +7,7 @@ Extended with conversion, yield proxy, energy, sensor noise.
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Dict
 
 import numpy as np
 
@@ -101,7 +101,8 @@ def simulate_campaign(
     # outputs before generating observations and synthetic spectra.
     anomaly = np.zeros(n_samples, dtype=int)
     if include_anomalies:
-        idx = rng.choice(n_samples, size=max(3, n_samples // 20), replace=False)
+        n_anomalies = min(n_samples, max(3, n_samples // 20))
+        idx = rng.choice(n_samples, size=n_anomalies, replace=False)
         T[idx] = rng.uniform(450, 500, len(idx))
         anomaly[idx] = 1
         for i in idx:
