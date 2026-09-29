@@ -1,0 +1,23 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+mlruns/
+# Raw public datasets
+data/raw/
+data/interim/
+data/processed/
+.DS_Store
+*.log
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.pem
+*.key

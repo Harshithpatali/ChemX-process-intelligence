@@ -1,0 +1,190 @@
+{
+  "mlnir": {
+    "dataset": "MLNIRdata",
+    "n_train": 156,
+    "n_test": 52,
+    "best_preprocessing": "raw",
+    "preprocessing": {
+      "raw": {
+        "RMSE": 0.03494219202700456,
+        "MAE": 0.018775922639651006,
+        "R2": 0.9786837604022883,
+        "bias": 0.006460335498523272
+      },
+      "snv": {
+        "RMSE": 0.03781388439209062,
+        "MAE": 0.020930637510578824,
+        "R2": 0.9750360740780326,
+        "bias": 0.0025789928225327715
+      },
+      "msc": {
+        "RMSE": 0.03542947751219886,
+        "MAE": 0.01799892754583285,
+        "R2": 0.97808508470211,
+        "bias": 0.004844492505880243
+      },
+      "sg1": {
+        "RMSE": 0.035526055173459956,
+        "MAE": 0.01826454477763588,
+        "R2": 0.9779654455710703,
+        "bias": 0.003453592308154109
+      },
+      "snv_sg1": {
+        "RMSE": 0.037094195650151984,
+        "MAE": 0.020399419180368465,
+        "R2": 0.9759772778867466,
+        "bias": 0.0031452700616028746
+      }
+    },
+    "models": {
+      "PLS": {
+        "RMSE": 0.03494219202700456,
+        "MAE": 0.018775922639651006,
+        "R2": 0.9786837604022883,
+        "bias": 0.006460335498523272
+      },
+      "PCR": {
+        "RMSE": 0.03489293102578183,
+        "MAE": 0.020815948207391848,
+        "R2": 0.9787438206941441,
+        "bias": 0.008610407158030044
+      },
+      "Ridge": {
+        "RMSE": 0.03342022766477917,
+        "MAE": 0.019618028128696625,
+        "R2": 0.9805002470523512,
+        "bias": 0.009247825491892849
+      },
+      "ElasticNet": {
+        "RMSE": 0.17147168713437974,
+        "MAE": 0.13481002771240955,
+        "R2": 0.48667177666368433,
+        "bias": 0.06979732411754644
+      }
+    },
+    "bayesian_coverage_95": 0.9038461538461539,
+    "pca_anomaly_rate_test": 0.1346153846153846,
+    "top_vip_indices": [
+      192,
+      193,
+      191,
+      194,
+      155
+    ]
+  },
+  "corn_transfer": {
+    "dataset": "Corn",
+    "transfer": {
+      "Moisture_m5_to_mp5": {
+        "no_transfer_RMSE": 1.8159356259513746,
+        "same_instrument_RMSE": 0.05034583485066835,
+        "snv_transfer_RMSE": 2.0944071634202985,
+        "msc_transfer_RMSE": 2.1223055002978803,
+        "direct_std_RMSE": 0.2521158133384272
+      },
+      "Moisture_m5_to_mp6": {
+        "no_transfer_RMSE": 1.969859019002577,
+        "same_instrument_RMSE": 0.05034583485066835,
+        "snv_transfer_RMSE": 2.0741245565066815,
+        "msc_transfer_RMSE": 2.115262196142909,
+        "direct_std_RMSE": 0.24149922983444003
+      },
+      "Moisture_mp5_to_mp6": {
+        "no_transfer_RMSE": 0.6452158373218392,
+        "same_instrument_RMSE": 0.24341225958361382,
+        "snv_transfer_RMSE": 0.726434258500202,
+        "msc_transfer_RMSE": 0.7439570481312875,
+        "direct_std_RMSE": 0.2779968266978751
+      },
+      "Protein_m5_to_mp5": {
+        "no_transfer_RMSE": 1.5789452186341686,
+        "same_instrument_RMSE": 0.21207332413231894,
+        "snv_transfer_RMSE": 0.9776936636623497,
+        "msc_transfer_RMSE": 0.9901284722884369,
+        "direct_std_RMSE": 0.24444751106885176
+      },
+      "Protein_m5_to_mp6": {
+        "no_transfer_RMSE": 1.85733659840557,
+        "same_instrument_RMSE": 0.21207332413231894,
+        "snv_transfer_RMSE": 0.9885598513218287,
+        "msc_transfer_RMSE": 1.0072564426594404,
+        "direct_std_RMSE": 0.2296753338813158
+      },
+      "Protein_mp5_to_mp6": {
+        "no_transfer_RMSE": 0.3426108343192648,
+        "same_instrument_RMSE": 0.3347883445065921,
+        "snv_transfer_RMSE": 0.37456006846710704,
+        "msc_transfer_RMSE": 0.3645753434686786,
+        "direct_std_RMSE": 0.4007306892385685
+      }
+    }
+  },
+  "sugar_monitoring": {
+    "dataset": "Sugar",
+    "monitoring": {
+      "n_samples": 88,
+      "n_anomalies": 83,
+      "anomaly_rate": 0.9431818181818182,
+      "mean_T2": 51.30369813519238,
+      "mean_Q": 160280.19890592116,
+      "T2_limit": 17.237405401113122,
+      "Q_limit": 59341.12712828339
+    },
+    "root_cause_example": {
+      "sample_idx": 1,
+      "T2": 17.48097435262951,
+      "Q": 51817.95973826264,
+      "anomaly": true,
+      "top_contributor_indices": [
+        131,
+        130,
+        142,
+        143,
+        132
+      ],
+      "top_contributor_values": [
+        1234.5269461227026,
+        937.5387385615609,
+        838.5613324737221,
+        583.9492304544907,
+        579.565692225571
+      ],
+      "message": "Largest statistical contributors to the Q residual (not proven causal effects)."
+    }
+  },
+  "physics_opt": {
+    "dataset": "MECHANISTIC_SIMULATION",
+    "nn_metrics": {
+      "RMSE": 0.10940785154414517,
+      "MAE": 0.07974883874805964,
+      "R2": 0.7696974862161353,
+      "bias": -0.01128473374743847
+    },
+    "mean_abs_physics_residual": 0.07974883874805966,
+    "deterministic_opt": {
+      "success": true,
+      "T": 420.0,
+      "tau": 6.0,
+      "C_A0": 0.9999542635501804,
+      "yield": 0.7838653752514338,
+      "conversion": 0.7838653752514338,
+      "energy": 1.2,
+      "objective": 0.6638653752514339,
+      "message": "Optimization terminated successfully",
+      "method": "deterministic"
+    },
+    "risk_aware_opt": {
+      "success": false,
+      "T": 380.1163238828474,
+      "tau": 3.0049510399827652,
+      "C_A0": 1.0001758210962253,
+      "expected_yield": 0.2885874362017875,
+      "expected_energy": 0.8011632388284743,
+      "P_quality": 0.0,
+      "quality_threshold": 0.7,
+      "min_prob": 0.9,
+      "method": "risk_aware",
+      "message": "Positive directional derivative for linesearch"
+    }
+  }
+}

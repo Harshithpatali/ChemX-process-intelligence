@@ -1,0 +1,9 @@
+{
+  "pls_test_rmse": 0.034942192027004756,
+  "bayesian_coverage_95": 0.9038461538461539,
+  "n_train": 156,
+  "n_test": 52,
+  "n_features": 2635,
+  "source": "MLNIRdata (Zenodo 10.5281/zenodo.16781223)",
+  "target": "normalized_density"
+}
