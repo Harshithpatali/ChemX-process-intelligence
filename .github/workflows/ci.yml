@@ -1,5 +1,7 @@
 name: ChemX CI
 
+# Production gate: lint, tests, dependency audit and Docker build.
+
 on:
   push:
     branches: [main]
