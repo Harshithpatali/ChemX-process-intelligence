@@ -22,7 +22,7 @@ class Settings:
         self.log_level = os.getenv("CHEMX_LOG_LEVEL", "INFO").upper()
 
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+        self.groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip()
 
         self.api_host = os.getenv("CHEMX_API_HOST", "0.0.0.0")
         self.api_port = int(os.getenv("PORT", os.getenv("CHEMX_API_PORT", "8000")))
