@@ -16,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 class BayesianSoftSensor:
     """Probabilistic soft sensor: p(y | X) via Bayesian Ridge regression.
 
-    Outputs point prediction + 95% credible interval.
+    Outputs point prediction + approximate 95% predictive interval.
     """
 
     def __init__(self, n_features_pca: Optional[int] = 20):
@@ -69,7 +69,7 @@ class BayesianSoftSensor:
     def predict_interval(
         self, X: np.ndarray, alpha: float = 0.05
     ) -> Dict[str, np.ndarray]:
-        """Return mean and (1-alpha) credible interval (normal approximation)."""
+        """Return mean and an approximate (1-alpha) Gaussian predictive interval."""
         from scipy import stats
         mean, std = self.predict(X, return_std=True)
         z = stats.norm.ppf(1 - alpha / 2)
@@ -86,7 +86,7 @@ class BayesianSoftSensor:
     def coverage(
         self, X: np.ndarray, y: np.ndarray, alpha: float = 0.05
     ) -> float:
-        """Empirical coverage of the credible intervals."""
+        """Empirical coverage of the predictive intervals."""
         interval = self.predict_interval(X, alpha=alpha)
         y = np.asarray(y).ravel()
         inside = (y >= interval["lower"]) & (y <= interval["upper"])

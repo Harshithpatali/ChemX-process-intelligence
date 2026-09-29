@@ -20,6 +20,10 @@ The Streamlit frontend does not require the raw public datasets. The backend shi
 the small versioned MLNIR model bundle under `models/`. Raw datasets remain local-only
 for reproducibility and offline retraining.
 
+## Production checklist
+
+Before exposing the service publicly, set the exact Streamlit origin in `CHEMX_CORS_ORIGINS`, keep `CHEMX_ALLOW_RUNTIME_TRAINING=false`, and configure `GROQ_API_KEY` only when needed. The container runs as a non-root user and excludes `data/raw/` through the Docker build context.
+
 ## Render backend
 
 The repository includes `render.yaml` and a backend Dockerfile.
@@ -43,7 +47,7 @@ Set the secret:
 CHEMX_API_URL = "https://<your-render-service>.onrender.com"
 ```
 
-The frontend uses `requirements-streamlit.txt`. The API key for Groq is never needed
+The frontend uses `requirements-streamlit.txt`. The same file is mirrored under `src/dashboard/requirements.txt` for Streamlit Cloud configuration. The API key for Groq is never needed
 in the browser-facing app; it remains a backend secret.
 
 ## Local development

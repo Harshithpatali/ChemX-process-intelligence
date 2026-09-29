@@ -42,6 +42,9 @@ class Settings:
         self.random_seed = int(os.getenv("CHEMX_RANDOM_SEED", "42"))
         self.allow_runtime_training = os.getenv("CHEMX_ALLOW_RUNTIME_TRAINING", "false").lower() == "true"
 
+        if self.is_production and "*" in self.cors_origins:
+            raise ValueError("CHEMX_CORS_ORIGINS cannot contain '*' in production.")
+
     @property
     def is_production(self) -> bool:
         return self.env in {"production", "prod"}

@@ -6,21 +6,17 @@ deployed service. The versioned model bundle under models/ is loaded at startup.
 
 from __future__ import annotations
 
+import json
 import logging
-import math
-import sys
 import time
 import uuid
-from pathlib import Path
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +29,20 @@ from src.utils.model_registry import load_bundle
 settings = get_settings()
 logger = setup_logging(settings.log_level)
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    global _bundle, _metrics
+    _bundle, _metrics = load_bundle()
+    logger.info(
+        "ChemX ready model=%s features=%s groq=%s",
+        _metrics.get("model_version"),
+        _metrics.get("n_features"),
+        settings.groq_configured,
+    )
+    yield
+
 
 app = FastAPI(
     title="ChemX API",
@@ -42,6 +51,7 @@ app = FastAPI(
         "Research-grade chemometric process intelligence API. "
         "Public experimental datasets only; mechanistic optimization is synthetic."
     ),
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -58,7 +68,10 @@ _explainer = StakeholderExplainer()
 
 
 class SpectrumRequest(BaseModel):
-    spectrum: List[float] = Field(..., min_length=1, description="NIR spectrum in model wavelength order")
+    spectrum: List[float] = Field(
+        ..., min_length=1, max_length=10000,
+        description="NIR spectrum in model wavelength order",
+    )
     explain: bool = False
     audience: str = Field("operations", pattern="^(operations|quality|management)$")
 
@@ -77,21 +90,10 @@ class ExplainRequest(BaseModel):
     detail: str = Field("standard", pattern="^(brief|standard|detailed)$")
 
 
-@app.on_event("startup")
-def startup() -> None:
-    global _bundle, _metrics
-    _bundle, _metrics = load_bundle()
-    logger.info(
-        "ChemX ready model=%s features=%s groq=%s",
-        _metrics.get("model_version"),
-        _metrics.get("n_features"),
-        settings.groq_configured,
-    )
-
-
 @app.middleware("http")
 async def request_context(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
     started = time.perf_counter()
     try:
         response = await call_next(request)
@@ -253,8 +255,10 @@ def optimize(req: ProcessRequest):
 
 @app.post("/explain")
 def explain(req: ExplainRequest):
-    # The explainer has a deterministic fallback, so this endpoint remains usable
-    # without an LLM key.
+    # Bound the serialized prompt size before it reaches an external LLM provider.
+    serialized = json.dumps(req.context, default=str)
+    if len(serialized) > 6000:
+        raise HTTPException(413, "Explanation context is too large; limit it to 6000 characters.")
     return _explainer.explain(req.context, audience=req.audience, detail=req.detail)
 
 
@@ -274,4 +278,10 @@ def retrain():
 @app.exception_handler(Exception)
 async def unhandled(request: Request, exc: Exception):
     logger.exception("Unhandled error path=%s", request.url.path)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error", "request_id": request.headers.get("X-Request-ID")})
+    request_id = getattr(request.state, "request_id", None) or request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    response = JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "request_id": request_id},
+    )
+    response.headers["X-Request-ID"] = request_id
+    return response

@@ -23,6 +23,17 @@ def test_cstr_physical_bounds():
     assert result["yield"] >= 0
 
 
+def test_cstr_rejects_invalid_inputs():
+    import pytest
+
+    with pytest.raises(ValueError):
+        cstr_steady_state(0.0, 350.0, 2.0)
+    with pytest.raises(ValueError):
+        cstr_steady_state(1.0, -1.0, 2.0)
+    with pytest.raises(ValueError):
+        cstr_steady_state(1.0, 350.0, -0.5)
+
+
 def test_deterministic_opt_feasible():
     result = optimize_deterministic()
     assert result["success"]
@@ -70,6 +81,35 @@ def test_api_health_and_model_info():
         info = client.get("/model-info")
         assert info.status_code == 200
         assert info.json()["runtime_data_required"] is False
+
+
+def test_api_rejects_invalid_spectrum():
+    from fastapi.testclient import TestClient
+    from src.api.main import app
+
+    with TestClient(app) as client:
+        response = client.post("/predict", json={"spectrum": [1.0, 2.0]})
+        assert response.status_code == 422
+        assert "Expected" in response.json()["detail"]
+
+
+def test_api_explain_context_limit():
+    from fastapi.testclient import TestClient
+    from src.api.main import app
+
+    oversized = {"payload": "x" * 7000}
+    with TestClient(app) as client:
+        response = client.post("/explain", json={"context": oversized})
+        assert response.status_code == 413
+
+
+def test_risk_aware_optimization_is_reproducible():
+    from src.optimization.process_opt import optimize_risk_aware
+
+    a = optimize_risk_aware(n_mc=40, seed=7, min_prob=0.80)
+    b = optimize_risk_aware(n_mc=40, seed=7, min_prob=0.80)
+    assert a == b
+    assert "constraint_satisfied" in a
 
 
 def test_api_predict_and_monitor():

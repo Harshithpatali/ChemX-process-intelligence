@@ -49,6 +49,8 @@ def train_and_save(force: bool = False) -> Dict[str, Any]:
 
     metrics = {
         "model_version": "mlnir-density-v1",
+        "model_schema_version": 1,
+        "artifact_format": "joblib",
         "pls_test_rmse": float(np.sqrt(np.mean((pls.predict(Xte) - y[te]) ** 2))),
         "bayesian_coverage_95": float(bayes.coverage(Xte, y[te])),
         "n_train": int(len(tr)),

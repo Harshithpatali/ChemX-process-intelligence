@@ -33,7 +33,7 @@ REAL CHEMICAL DATA (MLNIR, Corn, Sugar)
         └─ Risk-aware opt (P(quality) constraint)
         │
         ▼
- FastAPI  (/predict /monitor /optimize /anomaly)
+ FastAPI  (/predict /monitor /optimize /anomaly /explain)
  Streamlit Control Tower
  Docker + pytest CI
 ```

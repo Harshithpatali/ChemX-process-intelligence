@@ -1,0 +1,5 @@
+# CI-only environment: keep this separate from the Streamlit runtime.
+-r requirements-api.txt
+httpx>=0.27,<1
+pytest>=7.4,<9
+ruff>=0.6,<1

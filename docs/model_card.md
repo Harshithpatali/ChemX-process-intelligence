@@ -3,7 +3,7 @@
 ## Model details
 - **Type:** PLS regression + Bayesian Ridge soft sensor
 - **Input:** NIR spectrum (2635 wavenumbers, cm⁻¹)
-- **Output:** Normalized density ∈ [0, 1] + 95% credible interval
+- **Output:** Normalized density ∈ [0, 1] + approximate 95% predictive interval
 - **Training data:** MLNIRdata public hydrocarbon mixtures (n=208)
 - **Not trained on:** any industrial/Shell/proprietary data
 
@@ -12,11 +12,11 @@ Demonstration of chemometric calibration and uncertainty quantification for port
 
 ## Metrics (held-out test, seed=42)
 - PLS / PCR RMSE ≈ 0.035, R² ≈ 0.98
-- Bayesian 95% interval empirical coverage ≈ 0.90
+- Bayesian approximate 95% predictive interval empirical coverage ≈ 0.90
 
 ## Limitations
 - Small public dataset; not validated for process control decisions
-- Interval calibration is approximate (normal assumption)
+- Predictive intervals use a Gaussian approximation and should be recalibrated on application-specific data
 - Spectral regions flagged by VIP are statistical, not automatically chemical assignments
 
 ## Ethical / safety

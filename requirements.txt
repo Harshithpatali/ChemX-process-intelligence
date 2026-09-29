@@ -1,11 +1,11 @@
 # Full local development environment
 -r requirements-api.txt
--r src/dashboard/requirements.txt
+-r requirements-streamlit.txt
 
-# Offline experiments / testing
-pandas>=2.0,<3
+# Experiments, notebooks and testing
 matplotlib>=3.7,<4
 seaborn>=0.12,<1
 pytest>=7.4,<9
+ruff>=0.6,<1
 pyyaml>=6,<7
 python-multipart>=0.0.9,<1

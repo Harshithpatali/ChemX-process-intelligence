@@ -54,8 +54,9 @@ def optimize_deterministic(
     )
     T, tau, C_A0 = res.x
     r = cstr_steady_state(C_A0, T, tau)
+    success = bool(res.success) and prob >= min_prob
     return {
-        "success": bool(res.success),
+        "success": success,
         "T": float(T),
         "tau": float(tau),
         "C_A0": float(C_A0),
@@ -81,14 +82,26 @@ def optimize_risk_aware(
 
     Uncertainty is modelled as Gaussian noise on the effective rate constant.
     """
+    if n_mc < 10:
+        raise ValueError("n_mc must be at least 10.")
+    if not 0.0 <= min_prob <= 1.0:
+        raise ValueError("min_prob must be between 0 and 1.")
+    if not 0.0 <= quality_threshold <= 1.0:
+        raise ValueError("quality_threshold must be between 0 and 1.")
+    if noise_std < 0:
+        raise ValueError("noise_std must be non-negative.")
+
     rng = np.random.RandomState(seed)
     bounds = [(320.0, 420.0), (0.5, 6.0), (0.8, 1.2)]
 
+    # Common random numbers keep candidate evaluations reproducible and
+    # comparable during SLSQP; the objective/constraint no longer move
+    # because fresh Monte Carlo noise is sampled on every evaluation.
+    Ea_samples = 5e4 + rng.normal(0, 1500, n_mc)
+    observation_noise = rng.normal(0, noise_std, n_mc)
+
     def mc_stats(x: np.ndarray) -> Tuple[float, float, float]:
         T, tau, C_A0 = x
-        # Perturb Ea slightly to induce uncertainty in k
-        Ea_base = 5e4
-        Ea_samples = Ea_base + rng.normal(0, 1500, n_mc)
         conversions = []
         yields = []
         energies = []
@@ -100,8 +113,7 @@ def optimize_risk_aware(
         conversions = np.array(conversions)
         yields = np.array(yields)
         energies = np.array(energies)
-        # observation noise
-        conversions = np.clip(conversions + rng.normal(0, noise_std, n_mc), 0, 1)
+        conversions = np.clip(conversions + observation_noise, 0, 1)
         prob = float((conversions >= quality_threshold).mean())
         return float(yields.mean()), float(energies.mean()), prob
 

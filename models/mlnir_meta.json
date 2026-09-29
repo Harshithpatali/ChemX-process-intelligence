@@ -1,4 +1,8 @@
 {
+  "model_schema_version": 1,
+  "artifact_format": "joblib",
+  "model_version": "mlnir-density-v1",
+  "model_type": "PLSRegression + BayesianRidge + PCA-MSPC",
   "pls_test_rmse": 0.034942192027004756,
   "bayesian_coverage_95": 0.9038461538461539,
   "n_train": 156,
@@ -6,5 +10,6 @@
   "n_features": 2635,
   "source": "MLNIRdata (Zenodo 10.5281/zenodo.16783068; dataset DOI 10.5281/zenodo.16781222)",
   "target": "normalized_density",
-  "model_version": "mlnir-density-v1"
+  "axis_unit": "cm-1",
+  "runtime_data_required": false
 }

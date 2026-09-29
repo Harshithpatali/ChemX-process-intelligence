@@ -7,8 +7,6 @@ from typing import Dict, Tuple
 import numpy as np
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import StandardScaler
-
 from src.preprocessing.spectral import SNV, MSC
 
 
@@ -44,8 +42,14 @@ def transfer_experiment(
         y = y[:, property_idx]
     y = y.ravel()
 
-    # Split: first 60 train, rest test (paired samples)
-    n_train = 60
+    if X_a.shape[0] != X_b.shape[0] or X_a.shape[0] != y.shape[0]:
+        raise ValueError("X_a, X_b and y must contain the same number of paired samples.")
+    if X_a.shape[0] < 4:
+        raise ValueError("At least four paired samples are required.")
+
+    # Keep the historical 60-sample split when the public dataset is large,
+    # but remain safe for smaller unit-test or future datasets.
+    n_train = min(60, max(2, X_a.shape[0] // 2))
     Xa_tr, Xa_te = X_a[:n_train], X_a[n_train:]
     Xb_tr, Xb_te = X_b[:n_train], X_b[n_train:]
     y_tr, y_te = y[:n_train], y[n_train:]

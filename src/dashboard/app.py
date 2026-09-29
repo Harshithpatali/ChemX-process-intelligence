@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+from io import StringIO
 from typing import Any, Dict
 
 import httpx
@@ -54,7 +55,7 @@ def api_post(path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         return {"_error": str(exc)}
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def cached_get(path: str):
     return api_get(path)
 
@@ -85,6 +86,21 @@ def model_info():
 @st.cache_data(ttl=300, show_spinner="Loading demo spectrum…")
 def demo_spectrum():
     return cached_get("/demo-spectrum")
+
+
+def parse_uploaded_spectrum(raw: str) -> np.ndarray:
+    """Parse a headerless or header-containing CSV/TXT spectrum safely."""
+    attempts = [
+        lambda: np.genfromtxt(StringIO(raw), delimiter=",", dtype=float),
+        lambda: np.genfromtxt(StringIO(raw), delimiter=None, dtype=float),
+    ]
+    for parser in attempts:
+        values = np.asarray(parser(), dtype=float).reshape(-1)
+        if values.size:
+            finite = values[np.isfinite(values)]
+            if finite.size:
+                return finite
+    raise ValueError("No numeric spectral values were found in the uploaded file.")
 
 
 st.markdown(
@@ -195,7 +211,7 @@ elif page == "Spectroscopy":
     if uploaded:
         raw = uploaded.getvalue().decode("utf-8")
         try:
-            values = np.fromstring(raw.replace("\n", ","), sep=",")
+            values = parse_uploaded_spectrum(raw)
             if len(values) != int(info["n_features"]):
                 st.error(f"Expected {info['n_features']} values; received {len(values)}.")
             else:
