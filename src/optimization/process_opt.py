@@ -149,4 +149,7 @@ def optimize_risk_aware(
         "min_prob": min_prob,
         "method": "risk_aware",
         "message": res.message,
+        "constraint_satisfied": bool(prob >= min_prob),
+        "n_mc": int(n_mc),
+        "seed": int(seed),
     }
