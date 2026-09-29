@@ -57,7 +57,7 @@ jobs:
         with:
           service-name: ${{ env.ECS_SERVICE }}
           image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-          execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/service-role/ecsTaskExecutionRole
+          execution-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ecsTaskExecutionRole
           infrastructure-role-arn: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/service-role/ecsInfrastructureRoleForExpressServices
           cluster: ${{ env.ECS_CLUSTER }}
           container-port: 8000
