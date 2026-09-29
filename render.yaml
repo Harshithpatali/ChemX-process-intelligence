@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: chemx-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: CHEMX_ENV
+        value: production
+      - key: CHEMX_LOG_LEVEL
+        value: INFO
+      - key: CHEMX_ALLOW_RUNTIME_TRAINING
+        value: "false"
+      - key: CHEMX_CORS_ORIGINS
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
