@@ -7,7 +7,6 @@ deployed service. The versioned model bundle under models/ is loaded at startup.
 from __future__ import annotations
 
 import json
-import logging
 import time
 import uuid
 from contextlib import asynccontextmanager

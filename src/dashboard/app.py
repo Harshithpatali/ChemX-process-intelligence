@@ -238,7 +238,8 @@ elif page == "Soft Sensor":
         if not error_box(result):
             u = result["uncertainty"]
             a, b, c = st.columns(3)
-            with a: kpi("Prediction", f"{result['prediction']:.4f}")
+            with a:
+                kpi("Prediction", f"{result['prediction']:.4f}")
             with b:
                 kpi("95% lower", f"{u['lower']:.4f}")
             with c:
@@ -254,7 +255,8 @@ elif page == "Process Monitoring":
         result = api_post("/monitor", {"spectrum": spectrum, "explain": True, "audience": "operations"})
         if not error_box(result):
             a, b, c = st.columns(3)
-            with a: kpi("Hotelling T²", f"{result['T2']:.3f}")
+            with a:
+                kpi("Hotelling T²", f"{result['T2']:.3f}")
             with b:
                 kpi("Q residual", f"{result['Q']:.3f}")
             with c:
@@ -287,10 +289,14 @@ elif page == "Chemometrics":
     if error_box(metrics):
         st.stop()
     a, b, c, d = st.columns(4)
-    with a: kpi("PLS test RMSE", f"{metrics.get('pls_test_rmse', float('nan')):.4f}")
-    with b: kpi("Bayesian coverage", f"{100*metrics.get('bayesian_coverage_95', float('nan')):.1f}%")
-    with c: kpi("Train samples", str(metrics.get("n_train", "—")))
-    with d: kpi("Spectral variables", str(metrics.get("n_features", "—")))
+    with a:
+        kpi("PLS test RMSE", f"{metrics.get('pls_test_rmse', float('nan')):.4f}")
+    with b:
+        kpi("Bayesian coverage", f"{100*metrics.get('bayesian_coverage_95', float('nan')):.1f}%")
+    with c:
+        kpi("Train samples", str(metrics.get("n_train", "—")) )
+    with d:
+        kpi("Spectral variables", str(metrics.get("n_features", "—")) )
     st.markdown("### Methods")
     st.markdown(
         "- PLS latent-variable calibration\n"

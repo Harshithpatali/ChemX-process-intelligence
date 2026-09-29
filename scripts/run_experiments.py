@@ -16,10 +16,10 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.utils.io import load_mlnir, load_corn, load_corn_all, load_sugar, train_test_split_indices
+from src.utils.io import load_mlnir, load_corn_all, load_sugar, train_test_split_indices
 from src.preprocessing.spectral import apply_preprocessing
 from src.chemometrics.pca import ChemometricPCA
-from src.chemometrics.pls import PLSModel, compare_regressors, select_n_components_cv, regression_metrics
+from src.chemometrics.pls import PLSModel, compare_regressors, regression_metrics
 from src.bayesian.soft_sensor import BayesianSoftSensor
 from src.monitoring.process_monitor import ProcessMonitor
 from src.transfer.calibration_transfer import transfer_experiment
